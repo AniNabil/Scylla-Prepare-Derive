@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "example",
+    "scylla-prepare-derive",
+]
+resolver = "2"
