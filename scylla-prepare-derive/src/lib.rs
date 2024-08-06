@@ -1,9 +1,7 @@
 #![recursion_limit = "256"]
 extern crate proc_macro;
-
-//use scylla::{prepared_statement::PreparedStatement, serialize::value, transport::errors::QueryError, Session};
 use proc_macro::TokenStream;
-use quote::{quote, TokenStreamExt};
+use quote::quote;
 use syn::{Data, DeriveInput, Fields, Ident};
 
 #[proc_macro_derive(PrepareScylla)]
