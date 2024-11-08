@@ -2,7 +2,13 @@
 extern crate proc_macro;
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{Attribute, Data, DeriveInput, Fields, Ident, Lit, Meta, parse_macro_input};
+use syn::{parse_macro_input, Attribute, Data, DeriveInput, Fields, Ident, Lit, Meta, Type};
+
+#[derive(Debug)]
+struct StructField {
+    name: Ident,
+    ty: Type
+}
 
 #[proc_macro_derive(PrepareScylla)]
 pub fn prepare_scylla_derive(input: TokenStream) -> TokenStream {
@@ -13,7 +19,7 @@ pub fn prepare_scylla_derive(input: TokenStream) -> TokenStream {
     let mut path = String::new();
 
     let name: Ident = ast.ident.clone();
-    let fields: Vec<Ident> = match_fields(&ast);
+    let fields: Vec<StructField> = match_fields(&ast);
     println!("{:?}", name);
     println!("{:?}", fields);
 
@@ -32,16 +38,22 @@ pub fn prepare_scylla_derive(input: TokenStream) -> TokenStream {
     write_code(name, fields, path)
 }
 
-fn match_fields(input: &DeriveInput) -> Vec<Ident> {
+fn match_fields(input: &DeriveInput) -> Vec<StructField> {
     match &input.data {
         Data::Struct(value) => {
             match &value.fields {
                 Fields::Named(value) => {
-                    let mut ident_vec: Vec<Ident> = Vec::new();
-                    let _ = &value.named.iter().for_each(|x|
-                        ident_vec.push(x.ident.clone().expect("Unnamed Field"))
+                    let mut fields_vec: Vec<StructField> = Vec::new();
+                    let _ = &value.named.iter().for_each(|x|{
+                        fields_vec.push(
+                            StructField { 
+                                name: x.ident.clone().expect("Unnamed Field"),
+                                ty: x.ty.clone()
+                            }
+                        );
+                    }
                     );
-                    return ident_vec;
+                    return fields_vec;
                 },
                 _ => {},
             } 
@@ -51,13 +63,15 @@ fn match_fields(input: &DeriveInput) -> Vec<Ident> {
     vec![]
 }
 
-fn write_code(name: Ident, field_names: Vec<Ident>, path: String) -> TokenStream {
-    let fields_init: proc_macro2::TokenStream = field_names.iter().map(|x| {
-        quote! {
+fn write_code(name: Ident, field_names: Vec<StructField>, path: String) -> TokenStream {
+    let fields_init: proc_macro2::TokenStream = field_names.iter().map(|field| {
+        let x = field.name.clone();
+        return quote! {
             #x: #x(session).await?,
-        }
+        };
     }).collect();
-    let fields_functions: proc_macro2::TokenStream = field_names.iter().map(|x| {
+    let fields_functions: proc_macro2::TokenStream = field_names.iter().map(|field| {
+        let x = field.name.clone();
         let ident_string = x.to_string();
         let mut string: String = path.to_string();
         string.push_str(&ident_string);

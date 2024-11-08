@@ -4,6 +4,6 @@ version = "0.0.1"
 edition = "2021"
 
 [dependencies]
-scylla = "0.13.1"
+scylla = "0.14.0"
 scylla-prepare-derive ={ path= "../scylla-prepare-derive" }
-tokio = {version = "1.39.2", features = ["rt-multi-thread"]}
+tokio = {version = "1.41.1", features = ["rt-multi-thread"]}
