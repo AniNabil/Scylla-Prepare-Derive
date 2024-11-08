@@ -19,7 +19,7 @@ pub fn prepare_scylla_derive(input: TokenStream) -> TokenStream {
 
     // Iterate over the attributes of the struct to find the `path` attribute
     for attr in &ast.attrs {
-        if attr.path().is_ident("statements_path") {
+        if attr.path().is_ident("path") {
             match parse_path_attr(attr.clone()) {
                 Ok(p) => path = p,
                 Err(e) => panic!("Error parsing path attribute: {}", e),
