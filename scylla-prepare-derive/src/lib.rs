@@ -66,22 +66,46 @@ fn match_fields(input: &DeriveInput) -> Vec<StructField> {
 fn write_code(name: Ident, field_names: Vec<StructField>, path: String) -> TokenStream {
     let fields_init: proc_macro2::TokenStream = field_names.iter().map(|field| {
         let x = field.name.clone();
-        return quote! {
+        quote! {
             #x: #x(session).await?,
-        };
+        }
     }).collect();
     let fields_functions: proc_macro2::TokenStream = field_names.iter().map(|field| {
-        let x = field.name.clone();
-        let ident_string = x.to_string();
-        let mut string: String = path.to_string();
-        string.push_str(&ident_string);
-        string.push_str(".cql");
-        quote! {
-            async fn #x(session: &Session) -> Result<PreparedStatement, QueryError> {
-            let stmt = include_str!(#string);
-            session.prepare(stmt).await
+        match &field.ty {
+            Type::Path(value) => {
+                match value.path.segments.first() {
+                    Some(value) => {
+                        let x = field.name.clone();
+                        let ident_string = x.to_string();
+                        let mut string: String = path.to_string();
+                        string.push_str(&ident_string);
+                        if value.ident.to_string() == "PreparedStatement" {
+                            string.push_str(".cql");
+                            quote! {
+                                async fn #x(session: &Session) -> Result<PreparedStatement, QueryError> {
+                                    let stmt = include_str!(#string);
+                                    session.prepare(stmt).await
+                                }
+                                
+                            }
+                        } else if value.ident.to_string() == "Batch" {
+                            string.push_str("/");
+                            quote! {
+                                async fn #x(session: &Session) -> Result<Batch, QueryError> {
+                                    let files = fs::read_dir(string).unwrap();
+                                    let stmt = include_str!(#string);
+                                    session.prepare(stmt).await
+                                }
+                                
+                            }
+                        } else {
+                            quote! {}
+                        }
+                    }
+                    _ => quote! {}
+                }
             }
-
+            _ => quote! {},
         }
     }).collect();
     let gen = quote! {
