@@ -5,7 +5,7 @@ use scylla::prepared_statement::PreparedStatement;
 
 
 #[derive(PrepareScylla)]
-#[path = "./../cql/queries/"]
+#[statements_path = "./../cql/queries/"]
 pub struct PreparedStatements {
     get_user: PreparedStatement,
     get_group: PreparedStatement,
