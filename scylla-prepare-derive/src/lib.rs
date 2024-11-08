@@ -1,5 +1,7 @@
 #![recursion_limit = "256"]
 extern crate proc_macro;
+use std::fs;
+
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{parse_macro_input, Attribute, Data, DeriveInput, Fields, Ident, Lit, Meta, Type};
@@ -20,8 +22,8 @@ pub fn prepare_scylla_derive(input: TokenStream) -> TokenStream {
 
     let name: Ident = ast.ident.clone();
     let fields: Vec<StructField> = match_fields(&ast);
-    println!("{:?}", name);
-    println!("{:?}", fields);
+    //println!("{:?}", name);
+    //println!("{:?}", fields);
 
     // Iterate over the attributes of the struct to find the `path` attribute
     for attr in &ast.attrs {
@@ -90,11 +92,41 @@ fn write_code(name: Ident, field_names: Vec<StructField>, path: String) -> Token
                             }
                         } else if value.ident.to_string() == "Batch" {
                             string.push_str("/");
+                            let mut combined_statements = "".to_string();
+                            let files = fs::read_dir(string.clone()).unwrap();
+                            for i in 0..files.count() {
+                                let mut file_path = string.to_string();
+                                file_path.push_str(&i.to_string());
+                                file_path.push_str(".cql");
+                                println!("{}", file_path);
+                                let split = fs::read_to_string(file_path);
+                                match split {
+                                    Ok(value) => {
+                                        combined_statements.push_str("¦");
+                                        combined_statements.push_str(&value);
+                                    },
+                                    Err(err) => {}
+                                }
+                            }
                             quote! {
                                 async fn #x(session: &Session) -> Result<Batch, QueryError> {
-                                    let files = fs::read_dir(string).unwrap();
-                                    let stmt = include_str!(#string);
-                                    session.prepare(stmt).await
+                                    let files = fs::read_dir(#string).unwrap();
+                                    let mut batch: Batch = Default::default();
+                                    let combined_statements = include_str!(#combined_statements)
+                                    let split_statements = combined_statements.split("¦")
+                                    for i in 0..split_statements.len() {
+                                        let mut file_path = #string.to_string();
+                                        file_path.push_str(split_statements[i]);
+                                        file_path.push_str(".cql");
+                                        let stmt = fs::read_to_string(file_path);
+                                        match stmt {
+                                            Ok(value) => {
+                                                batch.append_statement(value.as_str());
+                                            },
+                                            Err(err) => {}
+                                        }
+                                    }
+                                    session.prepare_batch(&batch).await
                                 }
                                 
                             }
