@@ -1,6 +1,4 @@
 #![recursion_limit = "256"]
-extern crate proc_macro;
-use std::fs;
 
 use proc_macro::TokenStream;
 use quote::quote;
