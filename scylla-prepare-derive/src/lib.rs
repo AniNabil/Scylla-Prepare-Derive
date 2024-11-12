@@ -22,8 +22,6 @@ pub fn prepare_scylla_derive(input: TokenStream) -> TokenStream {
 
     let name: Ident = ast.ident.clone();
     let fields: Vec<StructField> = match_fields(&ast);
-    //println!("{:?}", name);
-    //println!("{:?}", fields);
 
     // Iterate over the attributes of the struct to find the `path` attribute
     for attr in &ast.attrs {
@@ -34,7 +32,6 @@ pub fn prepare_scylla_derive(input: TokenStream) -> TokenStream {
             }
         }
     }
-    println!("{:?}", path);
 
     // Build the trait implementation
     write_code(name, fields, path)
@@ -91,8 +88,7 @@ fn write_code(name: Ident, field_names: Vec<StructField>, path: String) -> Token
                                 }
                                 
                             }
-                        } else if value.ident.to_string() == "Batch" {  
-                            // println!("{}", combined_statements);
+                        } else if value.ident.to_string() == "Batch" {
                             let mut directory: String = "$CARGO_MANIFEST_DIR/".to_string();
                             directory.push_str(path.as_str());
                             directory.push_str(&ident_string);
