@@ -7,3 +7,4 @@ edition = "2021"
 scylla = "0.14.0"
 scylla-prepare-derive ={ path= "../scylla-prepare-derive" }
 tokio = {version = "1.41.1", features = ["rt-multi-thread"]}
+include_dir = {version = "0.7.4", features = ["glob"]}

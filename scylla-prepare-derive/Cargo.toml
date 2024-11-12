@@ -12,3 +12,4 @@ scylla = "0.14.0"
 quote = "1.0.37"
 syn = "2.0.87"
 proc-macro2 = "1.0.89"
+include_dir = {version = "0.7.4", features = ["glob"]}

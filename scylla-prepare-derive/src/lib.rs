@@ -79,52 +79,32 @@ fn write_code(name: Ident, field_names: Vec<StructField>, path: String) -> Token
                     Some(value) => {
                         let x = field.name.clone();
                         let ident_string = x.to_string();
-                        let mut string: String = path.to_string();
-                        string.push_str(&ident_string);
                         if value.ident.to_string() == "PreparedStatement" {
-                            string.push_str(".cql");
+                            let mut file : String = "/".to_string();
+                            file.push_str(path.as_str());
+                            file.push_str(&ident_string);
+                            file.push_str(".cql");
                             quote! {
                                 async fn #x(session: &Session) -> Result<PreparedStatement, QueryError> {
-                                    let stmt = include_str!(#string);
+                                    let stmt = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), #file));
                                     session.prepare(stmt).await
                                 }
                                 
                             }
-                        } else if value.ident.to_string() == "Batch" {
-                            string.push_str("/");
-                            let mut combined_statements = "".to_string();
-                            let files = fs::read_dir(string.clone()).unwrap();
-                            for i in 0..files.count() {
-                                let mut file_path = string.to_string();
-                                file_path.push_str(&i.to_string());
-                                file_path.push_str(".cql");
-                                println!("{}", file_path);
-                                let split = fs::read_to_string(file_path);
-                                match split {
-                                    Ok(value) => {
-                                        combined_statements.push_str("¦");
-                                        combined_statements.push_str(&value);
-                                    },
-                                    Err(err) => {}
-                                }
-                            }
+                        } else if value.ident.to_string() == "Batch" {  
+                            // println!("{}", combined_statements);
+                            let mut directory: String = "$CARGO_MANIFEST_DIR/".to_string();
+                            directory.push_str(path.as_str());
+                            directory.push_str(&ident_string);
                             quote! {
                                 async fn #x(session: &Session) -> Result<Batch, QueryError> {
-                                    let files = fs::read_dir(#string).unwrap();
                                     let mut batch: Batch = Default::default();
-                                    let combined_statements = include_str!(#combined_statements)
-                                    let split_statements = combined_statements.split("¦")
-                                    for i in 0..split_statements.len() {
-                                        let mut file_path = #string.to_string();
-                                        file_path.push_str(split_statements[i]);
-                                        file_path.push_str(".cql");
-                                        let stmt = fs::read_to_string(file_path);
-                                        match stmt {
-                                            Ok(value) => {
-                                                batch.append_statement(value.as_str());
-                                            },
-                                            Err(err) => {}
-                                        }
+                                    let statements_dir = include_dir!(#directory);
+                                    for i in 0..statements_dir.files().count(){
+                                        let mut file_name = i.to_string();
+                                        file_name.push_str(".cql");
+                                        let statement = statements_dir.get_file(file_name).unwrap().contents_utf8().unwrap();
+                                        batch.append_statement(statement);
                                     }
                                     session.prepare_batch(&batch).await
                                 }
