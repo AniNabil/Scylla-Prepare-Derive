@@ -80,6 +80,7 @@ fn write_code(name: Ident, field_names: Vec<StructField>, path: String) -> Token
                             file.push_str(&ident_string);
                             file.push_str(".cql");
                             quote! {
+                                #[allow(non_snake_case)]
                                 async fn #x(session: &Session) -> Result<PreparedStatement, QueryError> {
                                     let stmt = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), #file));
                                     session.prepare(stmt).await
@@ -91,6 +92,7 @@ fn write_code(name: Ident, field_names: Vec<StructField>, path: String) -> Token
                             directory.push_str(path.as_str());
                             directory.push_str(&ident_string);
                             quote! {
+                                #[allow(non_snake_case)]
                                 async fn #x(session: &Session) -> Result<Batch, QueryError> {
                                     let mut batch: Batch = Default::default();
                                     let statements_dir = include_dir!(#directory);
@@ -120,6 +122,7 @@ fn write_code(name: Ident, field_names: Vec<StructField>, path: String) -> Token
                                                                         directory.push_str(path.as_str());
                                                                         directory.push_str(&ident_string);
                                                                         quote! {
+                                                                            #[allow(non_snake_case)]
                                                                             async fn #x(session: &Session) -> Result<Vec<PreparedStatement>, QueryError> {
                                                                                 let mut statements: Vec<PreparedStatement> = vec![];
                                                                                 let statements_dir = include_dir!(#directory);
@@ -169,6 +172,7 @@ fn write_code(name: Ident, field_names: Vec<StructField>, path: String) -> Token
         }
     }).collect();
     let gen = quote! {
+        #[allow(non_snake_case)]
         impl #name {
             pub async fn new(session: &Session) -> Result<Self, QueryError> {
                 Ok(
