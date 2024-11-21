@@ -104,6 +104,60 @@ fn write_code(name: Ident, field_names: Vec<StructField>, path: String) -> Token
                                 }
                                 
                             }
+                        } else if value.ident.to_string() == "Vec" {
+                            match &value.arguments {
+                                syn::PathArguments::AngleBracketed(angle_bracketed_generic_arguments) => {
+                                    match angle_bracketed_generic_arguments.args.first() {
+                                        Some(first_argument) => {
+                                            match first_argument {
+                                                syn::GenericArgument::Type(found_type) => {
+                                                    match found_type {
+                                                        Type::Path(type_path) => {
+                                                            match type_path.path.segments.first() {
+                                                                Some(inner_type) => {
+                                                                    if inner_type.ident.to_string() == "PreparedStatement" {
+                                                                        let mut directory: String = "$CARGO_MANIFEST_DIR/".to_string();
+                                                                        directory.push_str(path.as_str());
+                                                                        directory.push_str(&ident_string);
+                                                                        quote! {
+                                                                            async fn #x(session: &Session) -> Result<Vec<PreparedStatement>, QueryError> {
+                                                                                let mut statements: Vec<PreparedStatement> = vec![];
+                                                                                let statements_dir = include_dir!(#directory);
+                                                                                for i in 0..statements_dir.files().count(){
+                                                                                    let mut file_name = i.to_string();
+                                                                                    file_name.push_str(".cql");
+                                                                                    let statement = statements_dir.get_file(file_name).unwrap().contents_utf8().unwrap();
+                                                                                    statements.push(session.prepare(statement).await?);
+                                                                                }
+                                                                                return Ok(statements);
+                                                                            }
+                                                                        }
+                                                                    } else {
+                                                                        quote! {}
+                                                                    }
+                                                                }
+                                                                _ => {
+                                                                    quote! {}
+                                                                }
+                                                            }
+                                                        }
+                                                        _ => {
+                                                            quote! {}
+                                                        }
+                                                    }
+                                                }
+                                                _ => quote! {}
+                                            }
+                                        }
+                                        _ => {
+                                            quote! {}
+                                        }
+                                    }
+                                },
+                                _ => {
+                                    quote! {}
+                                }
+                            }
                         } else {
                             quote! {}
                         }

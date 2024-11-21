@@ -11,7 +11,7 @@ use include_dir::include_dir;
 pub struct PreparedStatements {
     get_user: PreparedStatement,
     get_group: PreparedStatement,
-    use_code: Batch
+    use_code: Vec<PreparedStatement>
     //...
 }
 
